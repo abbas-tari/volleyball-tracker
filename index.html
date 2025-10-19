@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aker Aces - Performance Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .header .subtitle {
+            color: #666;
+            font-size: 1em;
+        }
+
+        /* Role Status Banner */
+        .role-banner {
+            text-align: center;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .role-tracker {
+            background: #d4edda;
+            color: #155724;
+            border: 3px solid #c3e6cb;
+        }
+
+        .role-viewer {
+            background: #fff3cd;
+            color: #856404;
+            border: 3px solid #ffc107;
+        }
+
+        .role-available {
+            background: #cfe2ff;
+            color: #084298;
+            border: 3px solid #9ec5fe;
+        }
+
+        .loading-screen {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .loading-screen h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .choice-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .choice-screen h2 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .game-info-box {
+            background: #e3f2fd;
+            border: 3px solid #2196f3;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .game-info-box h3 {
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+
+        .game-info-item {
+            padding: 8px 0;
+            font-size: 1.1em;
+        }
+
+        .game-info-item strong {
+            color: #666;
+        }
+
+        .choice-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .choice-btn {
+            padding: 20px 40px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 200px;
+        }
+
+        .btn-continue {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-new-game {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-claim-tracker {
+            background: #2196f3;
+            color: white;
+        }
+
+        .choice-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .choice-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .connection-status {
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+
+        .status-connected {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .status-disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .status-loading {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeaa7;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            flex-wrap: wrap;
+        }
+
+        .score-item {
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .score-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .current-rally {
+            background: #fff3cd;
+            border: 3px solid #ffc107;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .current-rally h3 {
+            color: #856404;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 1.1em;
+        }
+
+        .rally-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 15px;
+            min-height: 35px;
+        }
+
+        .rally-action-tag {
+            background: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            border: 2px solid #ffc107;
+            font-size: 0.85em;
+        }
+
+        .rally-complete-btns {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-rally-won {
+            background: #28a745;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-rally-lost {
+            background: #dc3545;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-rally-won:hover:not(:disabled), .btn-rally-lost:hover:not(:disabled) {
+            transform: scale(1.05);
+        }
+
+        .btn-rally-won:disabled, .btn-rally-lost:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .quick-record-section {
+            background: #e8f5e9;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .quick-record-section h3 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .player-quick-actions {
+            display: grid;
+            gap: 12px;
+        }
+
+        .player-row {
+            background: white;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid #4caf50;
+        }
+
+        .player-row.bench-player {
+            opacity: 0.6;
+            border-color: #ccc;
+        }
+
+        .player-name-row {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-score-badge {
+            font-size: 0.8em;
+            padding: 3px 8px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+            gap: 6px;
+        }
+
+        .quick-btn {
+            padding: 8px 4px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+        }
+
+        .quick-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+
+        .quick-btn:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+
+        .quick-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-ace { background: #667eea; }
+        .btn-kill { background: #f5576c; }
+        .btn-block { background: #00d4ff; }
+        .btn-dig { background: #38f9d7; }
+        .btn-pass { background: #9c27b0; }
+        .btn-error { background: #ff6b6b; }
+
+        .score-good { background: #4caf50; color: white; }
+        .score-ok { background: #ff9800; color: white; }
+        .score-poor { background: #f44336; color: white; }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .control-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-rotate { background: #667eea; }
+        .btn-sub { background: #ff9800; }
+        .btn-end-set { background: #4caf50; }
+        .btn-view-stats { background: #9c27b0; }
+        .btn-undo { background: #dc3545; }
+        .btn-sync { background: #17a2b8; }
+        .btn-release { background: #e74c3c; }
+
+        .control-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 1200px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-close {
+            font-size: 2em;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .player-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+
+        .player-card h3 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.9em;
+        }
+
+        .stat-label {
+            color: #666;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .performance-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            margin-top: 8px;
+            font-size: 0.9em;
+        }
+
+        .setup-screen {
+            text-align: center;
+        }
+
+        .player-setup {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .player-input {
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+
+        .start-btn {
+            padding: 20px 40px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .sub-modal-content {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .sub-section {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .sub-section h4 {
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        .player-select-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .player-select-btn:hover {
+            border-color: #667eea;
+        }
+
+        .player-select-btn.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .instruction-box {
+            background: #e3f2fd;
+            border-left: 5px solid #2196f3;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+
+        .instruction-box p {
+            color: #1976d2;
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 768px) {
+            .score-board {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .action-buttons {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+            }
+
+            .sub-modal-content {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-btn {
+                font-size: 0.75em;
+                padding: 6px 2px;
+            }
+
+            .rally-complete-btns, .choice-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Loading Screen -->
+        <div id="loadingScreen">
+            <div class="header">
+                <h1>🏐 Aker Aces</h1>
+                <p class="subtitle">FFI Bedriftsidrettslag - Performance Tracker</p>
+            </div>
+            <div class="loading-screen">
+                <h2>Checking for active game...</h2>
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <!-- Choice Screen (Continue or New Game) -->
+        <div id="choiceScreen" style="display: none;">
+            <div class="header">
+                <h1>🏐 Aker Aces</h1>
+                <p class="subtitle">FFI Bedriftsidrettslag - Performance Tracker</p>
+            </div>
+            <div class="choice-screen">
+                <h2 id="choiceTitle">Active Game Found!</h2>
+                <div class="game-info-box">
+                    <h3>Current Game Status:</h3>
+                    <div class="game-info-item"><strong>Set:</strong> <span id="activeSet">1</span></div>
+                    <div class="game-info-item"><strong>Rallies Tracked:</strong> <span id="activeRallies">0</span></div>
+                    <div class="game-info-item"><strong>Players:</strong> <span id="activePlayers">Loading...</span></div>
+                    <div class="game-info-item" id="trackerStatus"></div>
+                </div>
+                <div class="choice-buttons">
+                    <button class="choice-btn btn-claim-tracker" id="btnClaimTracker" onclick="claimTrackerAndContinue()" style="display: none;">🎮 Join as Tracker</button>
+                    <button class="choice-btn btn-continue" id="btnContinueViewer" onclick="continueAsViewer()" style="display: none;">👁️ Join as Viewer</button>
+                    <button class="choice-btn btn-new-game" onclick="startNewGame()">🆕 Start New Game</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Player Setup Screen -->
+        <div id="setupScreen" class="setup-screen" style="display: none;">
+            <div class="header">
+                <h1>🏐 Aker Aces</h1>
+                <p class="subtitle">FFI Bedriftsidrettslag - Performance Tracker</p>
+            </div>
+
+            <h2 style="margin-bottom: 20px;">Enter Player Names</h2>
+            <div class="player-setup">
+                <input type="text" class="player-input" id="player1" placeholder="Player 1" value="Player 1">
+                <input type="text" class="player-input" id="player2" placeholder="Player 2" value="Player 2">
+                <input type="text" class="player-input" id="player3" placeholder="Player 3" value="Player 3">
+                <input type="text" class="player-input" id="player4" placeholder="Player 4" value="Player 4">
+                <input type="text" class="player-input" id="player5" placeholder="Player 5" value="Player 5">
+                <input type="text" class="player-input" id="player6" placeholder="Player 6" value="Player 6">
+                <input type="text" class="player-input" id="player7" placeholder="Player 7" value="Player 7">
+                <input type="text" class="player-input" id="player8" placeholder="Player 8" value="Player 8">
+                <input type="text" class="player-input" id="player9" placeholder="Player 9" value="Player 9">
+            </div>
+
+            <button class="start-btn" onclick="startGame()">Start Tracking</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" style="display: none;">
+            <div class="header">
+                <h1>🏐 Aker Aces</h1>
+                <p class="subtitle">FFI Bedriftsidrettslag</p>
+            </div>
+
+            <!-- Role Banner -->
+            <div id="roleBanner" class="role-banner role-available">
+                🎮 YOU ARE TRACKING
+            </div>
+
+            <div id="connectionStatus" class="connection-status status-connected">
+                ✅ Connected to Google Sheets
+            </div>
+
+            <div class="instruction-box" id="instructionBox">
+                <p><strong>Quick Record:</strong> Tap action button → When rally ends, click "Rally WON ✅" or "Rally LOST ❌"</p>
+            </div>
+
+            <div class="score-board">
+                <div class="score-item">
+                    <div class="score-label">Set</div>
+                    <div class="score-value" id="currentSet">1</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Points Won</div>
+                    <div class="score-value" id="pointsThisSet">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Total Points</div>
+                    <div class="score-value" id="totalPoints">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Rallies</div>
+                    <div class="score-value" id="ralliesTracked">0</div>
+                </div>
+            </div>
+
+            <div class="current-rally" id="currentRallyBox">
+                <h3>📝 Current Rally</h3>
+                <div class="rally-actions" id="rallyActions">
+                    <em style="color: #856404; font-size: 0.9em;">No actions yet...</em>
+                </div>
+                <div class="rally-complete-btns">
+                    <button class="btn-rally-won" onclick="completeRally(true)" id="btnRallyWon">✅ Rally WON</button>
+                    <button class="btn-rally-lost" onclick="completeRally(false)" id="btnRallyLost">❌ Rally LOST</button>
+                </div>
+            </div>
+
+            <div class="quick-record-section">
+                <h3>⚡ Quick Record - Players on Court</h3>
+                <div class="player-quick-actions" id="quickActions"></div>
+            </div>
+
+            <div class="controls">
+                <button class="control-btn btn-undo" onclick="undoLastAction()" id="btnUndo" disabled>↩️ Undo</button>
+                <button class="control-btn btn-rotate" onclick="rotateTeam()" id="btnRotate">🔄 Rotate</button>
+                <button class="control-btn btn-sub" onclick="openSubModal()" id="btnSub">🔁 Sub</button>
+                <button class="control-btn btn-release" onclick="releaseTracking()" id="btnRelease">🔓 Release Tracking</button>
+                <button class="control-btn btn-sync" onclick="syncToSheets()" id="btnSync">☁️ Sync</button>
+                <button class="control-btn btn-view-stats" onclick="viewCurrentStats()">📊 Stats</button>
+                <button class="control-btn btn-end-set" onclick="endSet()" id="btnEndSet">✅ End Set</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Modal -->
+    <div id="statsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Performance Analysis - Set <span id="statsSetNumber"></span></h2>
+                <span class="modal-close" onclick="closeStatsModal()">×</span>
+            </div>
+            <div id="statsContent"></div>
+        </div>
+    </div>
+
+    <!-- Substitution Modal -->
+    <div id="subModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Substitute Player</h2>
+                <span class="modal-close" onclick="closeSubModal()">×</span>
+            </div>
+            <div class="sub-modal-content">
+                <div class="sub-section">
+                    <h4>Remove from Court</h4>
+                    <div id="removePlayerList"></div>
+                </div>
+                <div class="sub-section">
+                    <h4>Add from Bench</h4>
+                    <div id="addPlayerList"></div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="control-btn btn-sub" onclick="executeSub()">Confirm Substitution</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const config = {
+            webAppUrl: 'https://script.google.com/macros/s/AKfycbztmgZHah1i8xev08yqOLWxqfvdATq9JBwaHFBvEpRehWrs_THPMog7ij2BgJx0QPsj/exec'
+        };
+
+        // ============================================
+        // DEVICE IDENTIFICATION
+        // ============================================
+        let deviceId = localStorage.getItem('deviceId');
+        if (!deviceId) {
+            deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('deviceId', deviceId);
+        }
+
+        // ============================================
+        // GLOBAL STATE
+        // ============================================
+        let isTracker = false;
+        let activeGameData = null;
+        let roleCheckInterval = null;
+        let heartbeatInterval = null;
+
+        let gameState = {
+            players: [],
+            onCourt: [],
+            onBench: [],
+            currentSet: 1,
+            stats: {},
+            setStats: [],
+            pointsWon: 0,
+            ralliesTracked: 0,
+            currentRally: [],
+            setStartTime: Date.now(),
+            courtTimeStart: {},
+            sessionId: null
+        };
+
+        let subState = {
+            removePlayer: null,
+            addPlayer: null
+        };
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        window.addEventListener('DOMContentLoaded', async () => {
+            await checkForActiveGame();
+        });
+
+        async function checkForActiveGame() {
+            try {
+                const response = await fetch(config.webAppUrl + '?action=getActiveGame');
+                const data = await response.json();
+
+                if (data.status === 'success' && data.hasActiveGame) {
+                    activeGameData = data;
+                    await checkTrackerStatus(data.sessionId);
+                } else {
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    document.getElementById('setupScreen').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error checking for active game:', error);
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('setupScreen').style.display = 'block';
+            }
+        }
+
+        async function checkTrackerStatus(sessionId) {
+            try {
+                const response = await fetch(
+                    config.webAppUrl + `?action=getTrackerStatus&sessionId=${sessionId}&deviceId=${deviceId}`
+                );
+                const data = await response.json();
+
+                document.getElementById('activeSet').textContent = activeGameData.currentSet;
+                document.getElementById('activeRallies').textContent = activeGameData.rallyCount;
+                document.getElementById('activePlayers').textContent = activeGameData.players.join(', ');
+
+                const trackerStatus = document.getElementById('trackerStatus');
+
+                if (data.hasActiveTracker) {
+                    if (data.isTracker) {
+                        document.getElementById('choiceTitle').textContent = 'Continue Your Tracking Session?';
+                        trackerStatus.innerHTML = '<strong style="color: #28a745;">✅ You are the active tracker</strong>';
+                        document.getElementById('btnClaimTracker').style.display = 'none';
+                        document.getElementById('btnContinueViewer').innerHTML = '🎮 Continue Tracking';
+                        document.getElementById('btnContinueViewer').className = 'choice-btn btn-continue';
+                        document.getElementById('btnContinueViewer').style.display = 'inline-block';
+                    } else {
+                        trackerStatus.innerHTML = '<strong style="color: #ff9800;">⚠️ Someone else is currently tracking</strong>';
+                        document.getElementById('btnClaimTracker').style.display = 'none';
+                        document.getElementById('btnContinueViewer').innerHTML = '👁️ Join as Viewer';
+                        document.getElementById('btnContinueViewer').className = 'choice-btn btn-continue';
+                        document.getElementById('btnContinueViewer').style.display = 'inline-block';
+                    }
+                } else {
+                    trackerStatus.innerHTML = '<strong style="color: #2196f3;">🟢 Tracking available - No active tracker</strong>';
+                    document.getElementById('btnClaimTracker').style.display = 'inline-block';
+                    document.getElementById('btnContinueViewer').style.display = 'none';
+                }
+
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('choiceScreen').style.display = 'block';
+            } catch (error) {
+                console.error('Error checking tracker status:', error);
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('setupScreen').style.display = 'block';
+            }
+        }
+
+        // ============================================
+        // TRACKER CLAIMING & JOINING
+        // ============================================
+        async function claimTrackerAndContinue() {
+            try {
+                const response = await fetch(config.webAppUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'claim_tracker',
+                        sessionId: activeGameData.sessionId,
+                        deviceId: deviceId,
+                        trackerName: 'Tracker'
+                    })
+                });
+
+                isTracker = true;
+                continueGame(true);
+            } catch (error) {
+                console.error('Error claiming tracker:', error);
+                alert('Failed to claim tracker role. Please try again.');
+            }
+        }
+
+        function continueAsViewer() {
+            isTracker = false;
+            continueGame(false);
+        }
+
+        function continueGame(asTracker) {
+            if (!activeGameData) return;
+
+            isTracker = asTracker;
+            gameState.sessionId = activeGameData.sessionId;
+            gameState.currentSet = activeGameData.currentSet;
+            gameState.ralliesTracked = activeGameData.rallyCount;
+
+            const playerNames = activeGameData.players;
+            gameState.players = playerNames.map((name, index) => ({
+                id: index,
+                name: name
+            }));
+
+            gameState.onCourt = gameState.players.slice(0, 6).map(p => p.id);
+            gameState.onBench = gameState.players.slice(6).map(p => p.id);
+
+            gameState.onCourt.forEach(playerId => {
+                gameState.courtTimeStart[playerId] = Date.now();
+            });
+
+            gameState.players.forEach(player => {
+                gameState.stats[player.id] = {
+                    totalScore: 0,
+                    ralliesParticipated: 0,
+                    pointsParticipated: 0,
+                    courtTime: 0,
+                    actions: {
+                        ace: 0,
+                        kill: 0,
+                        block: 0,
+                        dig: 0,
+                        goodPass: 0,
+                        error: 0
+                    },
+                    actionHistory: []
+                };
+            });
+
+            document.getElementById('choiceScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            
+            updateRoleUI();
+            renderQuickActions();
+            updateScoreboard();
+            
+            startRoleChecking();
+            if (isTracker) {
+                startHeartbeat();
+            }
+        }
+
+        function startNewGame() {
+            activeGameData = null;
+            document.getElementById('choiceScreen').style.display = 'none';
+            document.getElementById('setupScreen').style.display = 'block';
+        }
+
+        // ============================================
+        // ROLE MANAGEMENT
+        // ============================================
+        function updateRoleUI() {
+            const roleBanner = document.getElementById('roleBanner');
+            const instructionBox = document.getElementById('instructionBox');
+            
+            if (isTracker) {
+                roleBanner.className = 'role-banner role-tracker';
+                roleBanner.textContent = '🎮 YOU ARE TRACKING';
+                instructionBox.querySelector('p').innerHTML = '<strong>You are tracking:</strong> Record actions and complete rallies. Others can view but not track.';
+                enableTracking();
+            } else {
+                roleBanner.className = 'role-banner role-viewer';
+                roleBanner.textContent = '👁️ VIEW ONLY MODE - Someone else is tracking';
+                instructionBox.querySelector('p').innerHTML = '<strong>Viewer mode:</strong> You can view live stats but cannot record actions. Refresh to see updates.';
+                disableTracking();
+            }
+        }
+
+        function enableTracking() {
+            document.querySelectorAll('.quick-btn').forEach(btn => btn.disabled = false);
+            document.getElementById('btnRallyWon').disabled = false;
+            document.getElementById('btnRallyLost').disabled = false;
+            document.getElementById('btnRotate').disabled = false;
+            document.getElementById('btnSub').disabled = false;
+            document.getElementById('btnEndSet').disabled = false;
+            document.getElementById('btnSync').disabled = false;
+            document.getElementById('btnRelease').style.display = 'inline-block';
+        }
+
+        function disableTracking() {
+            document.querySelectorAll('.quick-btn').forEach(btn => btn.disabled = true);
+            document.getElementById('btnRallyWon').disabled = true;
+            document.getElementById('btnRallyLost').disabled = true;
+            document.getElementById('btnRotate').disabled = true;
+            document.getElementById('btnSub').disabled = true;
+            document.getElementById('btnEndSet').disabled = true;
+            document.getElementById('btnSync').disabled = true;
+            document.getElementById('btnUndo').disabled = true;
+            document.getElementById('btnRelease').style.display = 'none';
+        }
+
+        function startRoleChecking() {
+            if (roleCheckInterval) clearInterval(roleCheckInterval);
+            roleCheckInterval = setInterval(async () => {
+                await checkMyRole();
+            }, 10000); // Check every 10 seconds
+        }
+
+        async function checkMyRole() {
+            if (!gameState.sessionId) return;
+
+            try {
+                const response = await fetch(
+                    config.webAppUrl + `?action=getTrackerStatus&sessionId=${gameState.sessionId}&deviceId=${deviceId}`
+                );
+                const data = await response.json();
+
+                const wasTracker = isTracker;
+                isTracker = data.isTracker;
+
+                if (wasTracker !== isTracker) {
+                    updateRoleUI();
+                    if (isTracker) {
+                        startHeartbeat();
+                    } else {
+                        stopHeartbeat();
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking role:', error);
+            }
+        }
+
+        function startHeartbeat() {
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            heartbeatInterval = setInterval(() => {
+                sendToSheets({
+                    type: 'heartbeat',
+                    sessionId: gameState.sessionId,
+                    deviceId: deviceId
+                });
+            }, 30000); // Every 30 seconds
+        }
+
+        function stopHeartbeat() {
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+            }
+        }
+
+        async function releaseTracking() {
+            if (!isTracker) return;
+
+            if (confirm('Release your tracking role? Others will be able to claim it.')) {
+                try {
+                    await fetch(config.webAppUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: 'release_tracker',
+                            sessionId: gameState.sessionId,
+                            deviceId: deviceId
+                        })
+                    });
+
+                    isTracker = false;
+                    stopHeartbeat();
+                    updateRoleUI();
+                    updateConnectionStatus('connected', 'Tracking released - Now in viewer mode');
+                } catch (error) {
+                    console.error('Error releasing tracker:', error);
+                }
+            }
+        }
+
+        // ============================================
+        // CONNECTION STATUS
+        // ============================================
+        function updateConnectionStatus(status, message) {
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.className = 'connection-status status-' + status;
+            
+            const icons = {
+                connected: '✅',
+                disconnected: '❌',
+                loading: '⏳'
+            };
+            
+            statusDiv.textContent = icons[status] + ' ' + message;
+        }
+
+        async function sendToSheets(data) {
+            if (!config.webAppUrl) {
+                console.error('No web app URL configured');
+                return false;
+            }
+
+            try {
+                updateConnectionStatus('loading', 'Saving to Google Sheets...');
+                
+                const response = await fetch(config.webAppUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                updateConnectionStatus('connected', 'Saved to Google Sheets ✓');
+                return true;
+            } catch (error) {
+                console.error('Error sending to sheets:', error);
+                updateConnectionStatus('disconnected', 'Failed to save - Check connection');
+                return false;
+            }
+        }
+
+        // ============================================
+        // GAME INITIALIZATION
+        // ============================================
+        function initializePlayers() {
+            const playerNames = [];
+            for (let i = 1; i <= 9; i++) {
+                const input = document.getElementById(`player${i}`);
+                playerNames.push(input.value || `Player ${i}`);
+            }
+
+            gameState.players = playerNames.map((name, index) => ({
+                id: index,
+                name: name
+            }));
+
+            gameState.onCourt = gameState.players.slice(0, 6).map(p => p.id);
+            gameState.onBench = gameState.players.slice(6).map(p => p.id);
+
+            gameState.onCourt.forEach(playerId => {
+                gameState.courtTimeStart[playerId] = Date.now();
+            });
+
+            gameState.players.forEach(player => {
+                gameState.stats[player.id] = {
+                    totalScore: 0,
+                    ralliesParticipated: 0,
+                    pointsParticipated: 0,
+                    courtTime: 0,
+                    actions: {
+                        ace: 0,
+                        kill: 0,
+                        block: 0,
+                        dig: 0,
+                        goodPass: 0,
+                        error: 0
+                    },
+                    actionHistory: []
+                };
+            });
+        }
+
+        async function startGame() {
+            initializePlayers();
+            gameState.sessionId = Date.now().toString();
+            isTracker = true;
+            
+            document.getElementById('setupScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            
+            updateRoleUI();
+            renderQuickActions();
+            updateScoreboard();
+            
+            await sendToSheets({
+                type: 'game_start',
+                sessionId: gameState.sessionId,
+                timestamp: new Date().toISOString(),
+                players: gameState.players,
+                set: gameState.currentSet
+            });
+
+            // Claim tracker role
+            await fetch(config.webAppUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'claim_tracker',
+                    sessionId: gameState.sessionId,
+                    deviceId: deviceId,
+                    trackerName: 'Host'
+                })
+            });
+
+            startRoleChecking();
+            startHeartbeat();
+        }
+
+        // ============================================
+        // PLAYER RENDERING
+        // ============================================
+        function renderQuickActions() {
+            const container = document.getElementById('quickActions');
+            container.innerHTML = '';
+
+            gameState.onCourt.forEach((playerId) => {
+                const player = gameState.players[playerId];
+                const stats = gameState.stats[playerId];
+                const score = calculatePlayerScore(playerId);
+                const rating = getPerformanceRating(score);
+
+                const playerRow = document.createElement('div');
+                playerRow.className = 'player-row';
+                playerRow.innerHTML = `
+                    <div class="player-name-row">
+                        <span>${player.name}</span>
+                        <span class="player-score-badge score-${rating.toLowerCase()}">${rating} ${score}%</span>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="quick-btn btn-ace" onclick="quickRecord(${playerId}, 'ace')" ${!isTracker ? 'disabled' : ''}>⚡ Ace</button>
+                        <button class="quick-btn btn-kill" onclick="quickRecord(${playerId}, 'kill')" ${!isTracker ? 'disabled' : ''}>💥 Kill</button>
+                        <button class="quick-btn btn-block" onclick="quickRecord(${playerId}, 'block')" ${!isTracker ? 'disabled' : ''}>🛡️ Block</button>
+                        <button class="quick-btn btn-dig" onclick="quickRecord(${playerId}, 'dig')" ${!isTracker ? 'disabled' : ''}>⬆️ Dig</button>
+                        <button class="quick-btn btn-pass" onclick="quickRecord(${playerId}, 'goodPass')" ${!isTracker ? 'disabled' : ''}>👍 Pass</button>
+                        <button class="quick-btn btn-error" onclick="quickRecord(${playerId}, 'error')" ${!isTracker ? 'disabled' : ''}>❌ Error</button>
+                    </div>
+                `;
+                container.appendChild(playerRow);
+            });
+
+            if (gameState.onBench.length > 0) {
+                const benchHeader = document.createElement('div');
+                benchHeader.innerHTML = '<h3 style="margin-top: 15px; color: #999; text-align: center;">Bench Players</h3>';
+                container.appendChild(benchHeader);
+
+                gameState.onBench.forEach((playerId) => {
+                    const player = gameState.players[playerId];
+                    const stats = gameState.stats[playerId];
+                    const score = calculatePlayerScore(playerId);
+                    const rating = getPerformanceRating(score);
+
+                    const playerRow = document.createElement('div');
+                    playerRow.className = 'player-row bench-player';
+                    playerRow.innerHTML = `
+                        <div class="player-name-row">
+                            <span>${player.name}</span>
+                            <span class="player-score-badge score-${rating.toLowerCase()}">${rating} ${score}%</span>
+                        </div>
+                        <div style="text-align: center; color: #999; font-size: 0.85em; margin-top: 5px;">On Bench</div>
+                    `;
+                    container.appendChild(playerRow);
+                });
+            }
+        }
+
+        // ============================================
+        // ACTION RECORDING
+        // ============================================
+        function quickRecord(playerId, actionType) {
+            if (!isTracker) {
+                alert('You are in viewer mode. Only the tracker can record actions.');
+                return;
+            }
+
+            const playerName = gameState.players[playerId].name;
+
+            gameState.currentRally.push({
+                playerId: playerId,
+                playerName: playerName,
+                action: actionType,
+                time: Date.now()
+            });
+
+            updateRallyDisplay();
+            document.getElementById('btnUndo').disabled = false;
+        }
+
+        function updateRallyDisplay() {
+            const rallyActions = document.getElementById('rallyActions');
+            
+            if (gameState.currentRally.length === 0) {
+                rallyActions.innerHTML = '<em style="color: #856404; font-size: 0.9em;">No actions yet...</em>';
+                return;
+            }
+
+            const actionEmojis = {
+                ace: '⚡',
+                kill: '💥',
+                block: '🛡️',
+                dig: '⬆️',
+                goodPass: '👍',
+                error: '❌'
+            };
+
+            rallyActions.innerHTML = gameState.currentRally.map((action) => {
+                return `<div class="rally-action-tag">
+                    ${actionEmojis[action.action]} ${action.playerName}
+                </div>`;
+            }).join('');
+        }
+
+        function undoLastAction() {
+            if (!isTracker) return;
+
+            if (gameState.currentRally.length > 0) {
+                gameState.currentRally.pop();
+                updateRallyDisplay();
+                
+                if (gameState.currentRally.length === 0) {
+                    document.getElementById('btnUndo').disabled = true;
+                }
+            }
+        }
+
+        async function completeRally(won) {
+            if (!isTracker) {
+                alert('You are in viewer mode. Only the tracker can complete rallies.');
+                return;
+            }
+
+            if (gameState.currentRally.length === 0) {
+                if (!confirm('No actions recorded for this rally. Continue anyway?')) {
+                    return;
+                }
+            }
+
+            const pointValues = {
+                ace: 3,
+                kill: 3,
+                block: 3,
+                dig: 2,
+                goodPass: 2,
+                error: -2
+            };
+
+            gameState.currentRally.forEach(action => {
+                const stats = gameState.stats[action.playerId];
+                stats.totalScore += pointValues[action.action];
+                stats.actions[action.action]++;
+                stats.actionHistory.push({
+                    action: action.action,
+                    rally: gameState.ralliesTracked + 1,
+                    won: won,
+                    time: action.time
+                });
+            });
+
+            gameState.onCourt.forEach(playerId => {
+                gameState.stats[playerId].ralliesParticipated++;
+                if (won) {
+                    gameState.stats[playerId].pointsParticipated++;
+                }
+            });
+
+            gameState.ralliesTracked++;
+            if (won) {
+                gameState.pointsWon++;
+            }
+
+            await sendToSheets({
+                type: 'rally_complete',
+                sessionId: gameState.sessionId,
+                timestamp: new Date().toISOString(),
+                set: gameState.currentSet,
+                rally: gameState.ralliesTracked,
+                won: won,
+                actions: gameState.currentRally,
+                playersOnCourt: gameState.onCourt.map(id => gameState.players[id].name)
+            });
+
+            gameState.currentRally = [];
+            document.getElementById('btnUndo').disabled = true;
+
+            updateRallyDisplay();
+            updateScoreboard();
+            renderQuickActions();
+        }
+
+        // ============================================
+        // SCORING & RATINGS
+        // ============================================
+        function calculatePlayerScore(playerId) {
+            const stats = gameState.stats[playerId];
+            if (stats.ralliesParticipated === 0) return 0;
+            
+            const score = ((stats.totalScore / stats.ralliesParticipated) * 20) + 50;
+            return Math.max(0, Math.min(100, Math.round(score)));
+        }
+
+        function getPerformanceRating(score) {
+            if (score >= 65) return 'Good';
+            if (score >= 35) return 'OK';
+            return 'Poor';
+        }
+
+        // ============================================
+        // TEAM MANAGEMENT
+        // ============================================
+        function rotateTeam() {
+            if (!isTracker) return;
+
+            const lastPlayer = gameState.onCourt.pop();
+            gameState.onCourt.unshift(lastPlayer);
+            renderQuickActions();
+            
+            sendToSheets({
+                type: 'rotation',
+                sessionId: gameState.sessionId,
+                timestamp: new Date().toISOString(),
+                set: gameState.currentSet,
+                newOrder: gameState.onCourt.map(id => gameState.players[id].name)
+            });
+        }
+
+        function updateScoreboard() {
+            document.getElementById('currentSet').textContent = gameState.currentSet;
+            document.getElementById('pointsThisSet').textContent = gameState.pointsWon;
+            document.getElementById('ralliesTracked').textContent = gameState.ralliesTracked;
+            
+            let totalPoints = gameState.pointsWon;
+            gameState.setStats.forEach(set => {
+                totalPoints += set.pointsWon;
+            });
+            document.getElementById('totalPoints').textContent = totalPoints;
+        }
+
+        // ============================================
+        // SUBSTITUTIONS
+        // ============================================
+        function openSubModal() {
+            if (!isTracker) return;
+
+            const removeList = document.getElementById('removePlayerList');
+            const addList = document.getElementById('addPlayerList');
+
+            removeList.innerHTML = '';
+            addList.innerHTML = '';
+
+            gameState.onCourt.forEach(playerId => {
+                const player = gameState.players[playerId];
+                const btn = document.createElement('button');
+                btn.className = 'player-select-btn';
+                btn.textContent = player.name;
+                btn.onclick = () => {
+                    subState.removePlayer = playerId;
+                    document.querySelectorAll('#removePlayerList .player-select-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                };
+                removeList.appendChild(btn);
+            });
+
+            gameState.onBench.forEach(playerId => {
+                const player = gameState.players[playerId];
+                const btn = document.createElement('button');
+                btn.className = 'player-select-btn';
+                btn.textContent = player.name;
+                btn.onclick = () => {
+                    subState.addPlayer = playerId;
+                    document.querySelectorAll('#addPlayerList .player-select-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                };
+                addList.appendChild(btn);
+            });
+
+            document.getElementById('subModal').classList.add('active');
+        }
+
+        function closeSubModal() {
+            document.getElementById('subModal').classList.remove('active');
+            subState = { removePlayer: null, addPlayer: null };
+        }
+
+        function executeSub() {
+            if (!isTracker) return;
+
+            if (subState.removePlayer === null || subState.addPlayer === null) {
+                alert('Please select both players to substitute');
+                return;
+            }
+
+            const removeStats = gameState.stats[subState.removePlayer];
+            const currentTime = Date.now();
+            const timeOnCourt = (currentTime - gameState.courtTimeStart[subState.removePlayer]) / 1000 / 60;
+            removeStats.courtTime += timeOnCourt;
+            delete gameState.courtTimeStart[subState.removePlayer];
+
+            gameState.courtTimeStart[subState.addPlayer] = currentTime;
+
+            const removeIndex = gameState.onCourt.indexOf(subState.removePlayer);
+            gameState.onCourt[removeIndex] = subState.addPlayer;
+
+            const benchIndex = gameState.onBench.indexOf(subState.addPlayer);
+            gameState.onBench[benchIndex] = subState.removePlayer;
+
+            sendToSheets({
+                type: 'substitution',
+                sessionId: gameState.sessionId,
+                timestamp: new Date().toISOString(),
+                set: gameState.currentSet,
+                playerOut: gameState.players[subState.removePlayer].name,
+                playerIn: gameState.players[subState.addPlayer].name
+            });
+
+            closeSubModal();
+            renderQuickActions();
+        }
+
+        // ============================================
+        // SYNC & STATS
+        // ============================================
+        function syncToSheets() {
+            updateConnectionStatus('loading', 'Syncing data...');
+            
+            const currentTime = Date.now();
+            const statsSnapshot = {};
+            
+            gameState.players.forEach(player => {
+                const stats = gameState.stats[player.id];
+                const courtTime = gameState.courtTimeStart[player.id] ? 
+                    stats.courtTime + ((currentTime - gameState.courtTimeStart[player.id]) / 1000 / 60) :
+                    stats.courtTime;
+                
+                statsSnapshot[player.name] = {
+                    ...stats,
+                    courtTime: courtTime,
+                    performanceScore: calculatePlayerScore(player.id),
+                    rating: getPerformanceRating(calculatePlayerScore(player.id))
+                };
+            });
+
+            sendToSheets({
+                type: 'sync',
+                sessionId: gameState.sessionId,
+                timestamp: new Date().toISOString(),
+                set: gameState.currentSet,
+                pointsWon: gameState.pointsWon,
+                ralliesTracked: gameState.ralliesTracked,
+                playerStats: statsSnapshot
+            });
+        }
+
+        function viewCurrentStats() {
+            generateStatsView(false);
+        }
+
+        // ============================================
+        // SET COMPLETION
+        // ============================================
+        async function endSet() {
+            if (!isTracker) {
+                alert('You are in viewer mode. Only the tracker can end the set.');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to end this set and view analysis?')) {
+                return;
+            }
+
+            const currentTime = Date.now();
+            gameState.onCourt.forEach(playerId => {
+                const stats = gameState.stats[playerId];
+                const timeOnCourt = (currentTime - gameState.courtTimeStart[playerId]) / 1000 / 60;
+                stats.courtTime += timeOnCourt;
+            });
+
+            const setData = {
+                setNumber: gameState.currentSet,
+                pointsWon: gameState.pointsWon,
+                ralliesTracked: gameState.ralliesTracked,
+                stats: JSON.parse(JSON.stringify(gameState.stats))
+            };
+            gameState.setStats.push(setData);
+
+            const statsSnapshot = {};
+            gameState.players.forEach(player => {
+                const stats = gameState.stats[player.id];
+                statsSnapshot[player.name] = {
+                    ...stats,
+                    performanceScore: calculatePlayerScore(player.id),
+                    rating: getPerformanceRating(calculatePlayerScore(player.id))
+                };
+            });
+
+            await sendToSheets({
+                type: 'set_complete',
+                sessionId: gameState.sessionId,
+                timestamp: new Date().toISOString(),
+                set: gameState.currentSet,
+                pointsWon: gameState.pointsWon,
+                ralliesTracked: gameState.ralliesTracked,
+                playerStats: statsSnapshot
+            });
+
+            generateStatsView(true);
+
+            gameState.currentSet++;
+            gameState.pointsWon = 0;
+            gameState.ralliesTracked = 0;
+            gameState.currentRally = [];
+            gameState.setStartTime = Date.now();
+
+            gameState.onCourt.forEach(playerId => {
+                gameState.courtTimeStart[playerId] = Date.now();
+            });
+
+            gameState.players.forEach(player => {
+                gameState.stats[player.id] = {
+                    totalScore: 0,
+                    ralliesParticipated: 0,
+                    pointsParticipated: 0,
+                    courtTime: 0,
+                    actions: {
+                        ace: 0,
+                        kill: 0,
+                        block: 0,
+                        dig: 0,
+                        goodPass: 0,
+                        error: 0
+                    },
+                    actionHistory: []
+                };
+            });
+
+            // Automatically release tracker after set ends
+            isTracker = false;
+            stopHeartbeat();
+            updateRoleUI();
+
+            updateScoreboard();
+            renderQuickActions();
+        }
+
+        // ============================================
+        // STATS DISPLAY
+        // ============================================
+        function generateStatsView(isSetEnd) {
+            const modal = document.getElementById('statsModal');
+            const content = document.getElementById('statsContent');
+            const setNumber = document.getElementById('statsSetNumber');
+
+            setNumber.textContent = isSetEnd ? 
+                (gameState.currentSet - 1) : 
+                `${gameState.currentSet} (In Progress)`;
+
+            let html = '<div class="stats-grid">';
+
+            gameState.players.forEach(player => {
+                const stats = gameState.stats[player.id];
+                const score = calculatePlayerScore(player.id);
+                const rating = getPerformanceRating(score);
+                const ratingClass = rating.toLowerCase();
+
+                html += `
+                    <div class="player-card">
+                        <h3>${player.name}</h3>
+                        <div class="performance-badge score-${ratingClass}">${rating} - ${score}%</div>
+                        
+                        <div style="margin-top: 12px;">
+                            <div class="stat-row">
+                                <span class="stat-label">Rallies:</span>
+                                <span class="stat-value">${stats.ralliesParticipated}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">Points Won:</span>
+                                <span class="stat-value">${stats.pointsParticipated}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">Score:</span>
+                                <span class="stat-value">${stats.totalScore > 0 ? '+' : ''}${stats.totalScore}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">Court Time:</span>
+                                <span class="stat-value">${stats.courtTime.toFixed(1)}m</span>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 12px;">
+                            <strong style="color: #667eea; font-size: 0.9em;">Actions:</strong>
+                            <div class="stat-row">
+                                <span class="stat-label">⚡ Aces:</span>
+                                <span class="stat-value">${stats.actions.ace}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">💥 Kills:</span>
+                                <span class="stat-value">${stats.actions.kill}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">🛡️ Blocks:</span>
+                                <span class="stat-value">${stats.actions.block}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">⬆️ Digs:</span>
+                                <span class="stat-value">${stats.actions.dig}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">👍 Passes:</span>
+                                <span class="stat-value">${stats.actions.goodPass}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">❌ Errors:</span>
+                                <span class="stat-value">${stats.actions.error}</span>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 12px;">
+                            <strong style="color: #667eea; font-size: 0.9em;">Insights:</strong>
+                            <div style="margin-top: 8px; font-size: 0.85em;">
+                                ${generateInsights(stats)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            content.innerHTML = html;
+            modal.classList.add('active');
+        }
+
+        function generateInsights(stats) {
+            let insights = [];
+
+            if (stats.actions.ace >= 2) insights.push('✅ <strong>Strong server</strong>');
+            if (stats.actions.kill >= 3) insights.push('✅ <strong>Effective attacker</strong>');
+            if (stats.actions.block >= 2) insights.push('✅ <strong>Solid blocker</strong>');
+            if (stats.actions.dig >= 3) insights.push('✅ <strong>Reliable defender</strong>');
+            if (stats.actions.goodPass >= 3) insights.push('✅ <strong>Consistent passer</strong>');
+            if (stats.actions.error <= 1 && stats.ralliesParticipated >= 5) insights.push('✅ <strong>Low errors</strong>');
+
+            if (stats.actions.error >= 3) insights.push('⚠️ <strong>High errors</strong>');
+            if (stats.totalScore < -5) insights.push('⚠️ <strong>Negative impact</strong>');
+            if (stats.ralliesParticipated >= 10 && stats.actions.ace === 0 && stats.actions.kill === 0 && stats.actions.block === 0) {
+                insights.push('⚠️ <strong>Limited offense</strong>');
+            }
+
+            if (stats.ralliesParticipated < 5) insights.push('ℹ️ <strong>Need more data</strong>');
+            if (stats.ralliesParticipated >= 5 && insights.filter(i => i.includes('✅')).length === 0 && insights.filter(i => i.includes('⚠️')).length === 0) {
+                insights.push('ℹ️ <strong>Steady performer</strong>');
+            }
+
+            if (insights.length === 0) {
+                return '<p style="color: #999;">Solid performance</p>';
+            }
+
+            return insights.map(i => `<p style="margin-bottom: 4px;">${i}</p>`).join('');
+        }
+
+        function closeStatsModal() {
+            document.getElementById('statsModal').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
