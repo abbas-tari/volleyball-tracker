@@ -908,6 +908,7 @@
         // ============================================
         async function claimTrackerAndContinue() {
             try {
+                console.log('Claiming tracker for existing game, sessionId:', activeGameData.sessionId, 'deviceId:', deviceId);
                 await fetch(config.webAppUrl, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -919,6 +920,7 @@
                         trackerName: 'Tracker'
                     })
                 });
+                console.log('Tracker claim sent');
 
                 isTracker = true;
                 lastTrackerClaim = Date.now(); // Record when we claimed
@@ -941,6 +943,8 @@
             gameState.sessionId = activeGameData.sessionId;
             gameState.currentSet = activeGameData.currentSet;
             gameState.ralliesTracked = activeGameData.rallyCount;
+
+            console.log('Continuing game as', asTracker ? 'TRACKER' : 'VIEWER');
 
             const playerNames = activeGameData.players;
             gameState.players = playerNames.map((name, index) => ({
@@ -982,11 +986,14 @@
             
             // Delay role checking if we just claimed tracker
             if (isTracker) {
+                console.log('Waiting 10 seconds before starting role checks...');
                 setTimeout(() => {
+                    console.log('Starting role checking and heartbeat');
                     startRoleChecking();
                     startHeartbeat();
-                }, 2000);
+                }, 10000);
             } else {
+                console.log('Starting role checking as viewer');
                 startRoleChecking();
             }
         }
@@ -1050,9 +1057,10 @@
         async function checkMyRole() {
             if (!gameState.sessionId) return;
 
-            // Don't check role within 5 seconds of claiming to allow server to process
+            // Don't check role within 30 seconds of claiming to allow server to process
             const timeSinceClaim = Date.now() - lastTrackerClaim;
-            if (timeSinceClaim < 5000) {
+            if (timeSinceClaim < 30000) {
+                console.log('Skipping role check - only ' + Math.round(timeSinceClaim/1000) + 's since claim');
                 return; // Skip this check, too soon after claiming
             }
 
@@ -1062,10 +1070,13 @@
                 );
                 const data = await response.json();
 
+                console.log('Role check result:', data);
+
                 const wasTracker = isTracker;
                 isTracker = data.isTracker;
 
                 if (wasTracker !== isTracker) {
+                    console.log('Role changed! Was tracker:', wasTracker, '-> Now tracker:', isTracker);
                     updateRoleUI();
                     if (isTracker) {
                         startHeartbeat();
@@ -1080,7 +1091,9 @@
 
         function startHeartbeat() {
             if (heartbeatInterval) clearInterval(heartbeatInterval);
+            console.log('Starting heartbeat (every 30 seconds)');
             heartbeatInterval = setInterval(() => {
+                console.log('Sending heartbeat...');
                 sendToSheets({
                     type: 'heartbeat',
                     sessionId: gameState.sessionId,
@@ -1212,6 +1225,8 @@
             isTracker = true;
             lastTrackerClaim = Date.now(); // Record when we claimed
             
+            console.log('Starting new game, sessionId:', gameState.sessionId, 'deviceId:', deviceId);
+            
             document.getElementById('setupScreen').style.display = 'none';
             document.getElementById('gameScreen').style.display = 'block';
             
@@ -1228,6 +1243,7 @@
             });
 
             // Claim tracker role
+            console.log('Claiming tracker role...');
             await fetch(config.webAppUrl, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -1239,12 +1255,15 @@
                     trackerName: 'Host'
                 })
             });
+            console.log('Tracker claim sent');
 
-            // Wait 2 seconds before starting role checking to ensure claim is processed
+            // Wait 10 seconds before starting role checking to ensure claim is processed
+            console.log('Waiting 10 seconds before starting role checks...');
             setTimeout(() => {
+                console.log('Starting role checking and heartbeat');
                 startRoleChecking();
                 startHeartbeat();
-            }, 2000);
+            }, 10000);
         }
 
         // ============================================
