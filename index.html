@@ -812,6 +812,7 @@
         let activeGameData = null;
         let roleCheckInterval = null;
         let heartbeatInterval = null;
+        let lastTrackerClaim = 0; // Timestamp of last tracker claim
 
         let gameState = {
             players: [],
@@ -907,7 +908,7 @@
         // ============================================
         async function claimTrackerAndContinue() {
             try {
-                const response = await fetch(config.webAppUrl, {
+                await fetch(config.webAppUrl, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
@@ -920,6 +921,7 @@
                 });
 
                 isTracker = true;
+                lastTrackerClaim = Date.now(); // Record when we claimed
                 continueGame(true);
             } catch (error) {
                 console.error('Error claiming tracker:', error);
@@ -978,9 +980,14 @@
             renderQuickActions();
             updateScoreboard();
             
-            startRoleChecking();
+            // Delay role checking if we just claimed tracker
             if (isTracker) {
-                startHeartbeat();
+                setTimeout(() => {
+                    startRoleChecking();
+                    startHeartbeat();
+                }, 2000);
+            } else {
+                startRoleChecking();
             }
         }
 
@@ -1042,6 +1049,12 @@
 
         async function checkMyRole() {
             if (!gameState.sessionId) return;
+
+            // Don't check role within 5 seconds of claiming to allow server to process
+            const timeSinceClaim = Date.now() - lastTrackerClaim;
+            if (timeSinceClaim < 5000) {
+                return; // Skip this check, too soon after claiming
+            }
 
             try {
                 const response = await fetch(
@@ -1197,6 +1210,7 @@
             initializePlayers();
             gameState.sessionId = Date.now().toString();
             isTracker = true;
+            lastTrackerClaim = Date.now(); // Record when we claimed
             
             document.getElementById('setupScreen').style.display = 'none';
             document.getElementById('gameScreen').style.display = 'block';
@@ -1226,8 +1240,11 @@
                 })
             });
 
-            startRoleChecking();
-            startHeartbeat();
+            // Wait 2 seconds before starting role checking to ensure claim is processed
+            setTimeout(() => {
+                startRoleChecking();
+                startHeartbeat();
+            }, 2000);
         }
 
         // ============================================
