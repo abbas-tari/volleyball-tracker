@@ -1746,6 +1746,13 @@
         let selectedSets = []; // Track which sets are selected
 
         function openStatsModal() {
+            console.log('Opening stats modal...');
+            console.log('Game state:', {
+                setStats: gameState.setStats,
+                currentSet: gameState.currentSet,
+                ralliesTracked: gameState.ralliesTracked
+            });
+            
             const modal = document.getElementById('statsModal');
             
             // Build set selector
@@ -1764,6 +1771,8 @@
             if (gameState.ralliesTracked > 0 && !selectedSets.includes(gameState.currentSet)) {
                 selectedSets.push(gameState.currentSet);
             }
+            
+            console.log('Initial selected sets:', selectedSets);
             
             updateSetSelector();
             generateStatsView();
@@ -1801,10 +1810,17 @@
         }
 
         function selectAllSets() {
+            console.log('All Sets clicked');
+            console.log('Completed sets:', gameState.setStats.length);
+            console.log('Current rallies:', gameState.ralliesTracked);
+            
             selectedSets = gameState.setStats.map(s => s.setNumber);
             if (gameState.ralliesTracked > 0) {
                 selectedSets.push(gameState.currentSet);
             }
+            
+            console.log('Selected sets:', selectedSets);
+            
             updateSetSelector();
             generateStatsView();
         }
@@ -1850,7 +1866,25 @@
         }
 
         function generateStatsView() {
+            console.log('Generating stats view...');
+            console.log('Selected sets:', selectedSets);
+            
             const content = document.getElementById('statsContent');
+            
+            // Check if there's any data to show
+            if (selectedSets.length === 0 || (gameState.setStats.length === 0 && gameState.ralliesTracked === 0)) {
+                console.log('No data to show');
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #999;">
+                        <h3 style="color: #667eea; margin-bottom: 15px;">📊 No Data Yet</h3>
+                        <p style="font-size: 1.1em;">Start tracking rallies to see player statistics!</p>
+                        <p style="margin-top: 10px;">Track at least one rally, then click Stats again.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            console.log('Calculating combined stats for', selectedSets.length, 'sets');
             
             // Calculate combined stats for selected sets
             const combinedStats = {};
