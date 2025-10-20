@@ -1812,12 +1812,14 @@
         function selectAllSets() {
             console.log('All Sets clicked');
             console.log('Completed sets:', gameState.setStats.length);
-            console.log('Current rallies:', gameState.ralliesTracked);
+            console.log('Current set:', gameState.currentSet);
             
-            selectedSets = gameState.setStats.map(s => s.setNumber);
-            if (gameState.ralliesTracked > 0) {
-                selectedSets.push(gameState.currentSet);
-            }
+            // Include all completed sets + current set
+            const allSets = gameState.setStats.map(s => s.setNumber);
+            allSets.push(gameState.currentSet);  // ✅ ALWAYS include current set
+            
+            // Remove duplicates (in case current set is already in setStats)
+            selectedSets = [...new Set(allSets)];
             
             console.log('Selected sets:', selectedSets);
             
