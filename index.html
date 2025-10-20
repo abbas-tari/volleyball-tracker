@@ -598,6 +598,37 @@
             line-height: 1.4;
         }
 
+        .set-selector-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #667eea;
+        }
+
+        .set-selector-btn:hover {
+            background: #f0f0ff;
+        }
+
+        .set-selector-btn.selected {
+            background: #667eea;
+            color: white;
+        }
+
+        .set-selector-btn.all-sets {
+            background: #4caf50;
+            color: white;
+            border-color: #4caf50;
+        }
+
+        .set-selector-btn.all-sets:hover {
+            background: #45a049;
+        }
+
         @media (max-width: 768px) {
             .score-board {
                 flex-direction: column;
@@ -758,9 +789,18 @@
     <div id="statsModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Performance Analysis - Set <span id="statsSetNumber"></span></h2>
+                <h2>Performance Analysis</h2>
                 <span class="modal-close" onclick="closeStatsModal()">×</span>
             </div>
+            
+            <!-- Set Selector -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 10px; font-size: 1.1em; color: #333;">Select Sets to Analyze:</h3>
+                <div id="setSelector" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <!-- Set buttons will be added dynamically -->
+                </div>
+            </div>
+            
             <div id="statsContent"></div>
         </div>
     </div>
@@ -1610,7 +1650,7 @@
         }
 
         function viewCurrentStats() {
-            generateStatsView(false);
+            openStatsModal();
         }
 
         // ============================================
@@ -1661,7 +1701,7 @@
                 playerStats: statsSnapshot
             });
 
-            generateStatsView(true);
+            openStatsModal();
 
             gameState.currentSet++;
             gameState.pointsWon = 0;
@@ -1701,22 +1741,198 @@
         }
 
         // ============================================
-        // STATS DISPLAY
+        // STATS DISPLAY WITH SET SELECTION
         // ============================================
-        function generateStatsView(isSetEnd) {
+        let selectedSets = []; // Track which sets are selected
+
+        function openStatsModal() {
             const modal = document.getElementById('statsModal');
+            
+            // Build set selector
+            buildSetSelector();
+            
+            // Default selection: all sets or current set if in progress
+            if (gameState.setStats.length > 0) {
+                // Select all completed sets by default
+                selectedSets = gameState.setStats.map(s => s.setNumber);
+            } else {
+                // Only current set in progress
+                selectedSets = [gameState.currentSet];
+            }
+            
+            // If current set has data, add it to selection
+            if (gameState.ralliesTracked > 0 && !selectedSets.includes(gameState.currentSet)) {
+                selectedSets.push(gameState.currentSet);
+            }
+            
+            updateSetSelector();
+            generateStatsView();
+            modal.classList.add('active');
+        }
+
+        function buildSetSelector() {
+            const selector = document.getElementById('setSelector');
+            selector.innerHTML = '';
+
+            // "All Sets" button
+            const allBtn = document.createElement('button');
+            allBtn.className = 'set-selector-btn all-sets';
+            allBtn.textContent = '📊 All Sets';
+            allBtn.onclick = selectAllSets;
+            selector.appendChild(allBtn);
+
+            // Individual set buttons for completed sets
+            gameState.setStats.forEach(setData => {
+                const btn = document.createElement('button');
+                btn.className = 'set-selector-btn';
+                btn.textContent = `Set ${setData.setNumber}`;
+                btn.onclick = () => toggleSetSelection(setData.setNumber);
+                selector.appendChild(btn);
+            });
+
+            // Current set button (if in progress)
+            if (gameState.ralliesTracked > 0) {
+                const btn = document.createElement('button');
+                btn.className = 'set-selector-btn';
+                btn.textContent = `Set ${gameState.currentSet} (Current)`;
+                btn.onclick = () => toggleSetSelection(gameState.currentSet);
+                selector.appendChild(btn);
+            }
+        }
+
+        function selectAllSets() {
+            selectedSets = gameState.setStats.map(s => s.setNumber);
+            if (gameState.ralliesTracked > 0) {
+                selectedSets.push(gameState.currentSet);
+            }
+            updateSetSelector();
+            generateStatsView();
+        }
+
+        function toggleSetSelection(setNumber) {
+            const index = selectedSets.indexOf(setNumber);
+            if (index > -1) {
+                selectedSets.splice(index, 1);
+            } else {
+                selectedSets.push(setNumber);
+            }
+            
+            // Ensure at least one set is selected
+            if (selectedSets.length === 0) {
+                selectedSets = [setNumber];
+            }
+            
+            updateSetSelector();
+            generateStatsView();
+        }
+
+        function updateSetSelector() {
+            const buttons = document.querySelectorAll('.set-selector-btn');
+            buttons.forEach(btn => {
+                if (btn.classList.contains('all-sets')) {
+                    // Highlight "All Sets" if all sets are selected
+                    const totalSets = gameState.setStats.length + (gameState.ralliesTracked > 0 ? 1 : 0);
+                    const allSelected = (totalSets > 0 && selectedSets.length === totalSets);
+                    if (allSelected) {
+                        btn.classList.add('selected');
+                    } else {
+                        btn.classList.remove('selected');
+                    }
+                } else {
+                    const setNum = parseInt(btn.textContent.match(/\d+/)[0]);
+                    if (selectedSets.includes(setNum)) {
+                        btn.classList.add('selected');
+                    } else {
+                        btn.classList.remove('selected');
+                    }
+                }
+            });
+        }
+
+        function generateStatsView() {
             const content = document.getElementById('statsContent');
-            const setNumber = document.getElementById('statsSetNumber');
+            
+            // Calculate combined stats for selected sets
+            const combinedStats = {};
+            
+            gameState.players.forEach(player => {
+                combinedStats[player.id] = {
+                    totalScore: 0,
+                    ralliesParticipated: 0,
+                    pointsParticipated: 0,
+                    courtTime: 0,
+                    actions: {
+                        ace: 0,
+                        kill: 0,
+                        block: 0,
+                        dig: 0,
+                        goodPass: 0,
+                        error: 0
+                    }
+                };
+            });
 
-            setNumber.textContent = isSetEnd ? 
-                (gameState.currentSet - 1) : 
-                `${gameState.currentSet} (In Progress)`;
+            // Add completed sets stats
+            selectedSets.forEach(setNum => {
+                const setData = gameState.setStats.find(s => s.setNumber === setNum);
+                if (setData) {
+                    // This is a completed set
+                    gameState.players.forEach(player => {
+                        const playerStats = setData.stats[player.id];
+                        if (playerStats) {
+                            combinedStats[player.id].totalScore += playerStats.totalScore;
+                            combinedStats[player.id].ralliesParticipated += playerStats.ralliesParticipated;
+                            combinedStats[player.id].pointsParticipated += playerStats.pointsParticipated;
+                            combinedStats[player.id].courtTime += playerStats.courtTime;
+                            Object.keys(playerStats.actions).forEach(action => {
+                                combinedStats[player.id].actions[action] += playerStats.actions[action];
+                            });
+                        }
+                    });
+                } else if (setNum === gameState.currentSet) {
+                    // This is the current set in progress
+                    gameState.players.forEach(player => {
+                        const playerStats = gameState.stats[player.id];
+                        combinedStats[player.id].totalScore += playerStats.totalScore;
+                        combinedStats[player.id].ralliesParticipated += playerStats.ralliesParticipated;
+                        combinedStats[player.id].pointsParticipated += playerStats.pointsParticipated;
+                        
+                        // Calculate current court time
+                        let courtTime = playerStats.courtTime;
+                        if (gameState.courtTimeStart[player.id]) {
+                            courtTime += (Date.now() - gameState.courtTimeStart[player.id]) / 1000 / 60;
+                        }
+                        combinedStats[player.id].courtTime += courtTime;
+                        
+                        Object.keys(playerStats.actions).forEach(action => {
+                            combinedStats[player.id].actions[action] += playerStats.actions[action];
+                        });
+                    });
+                }
+            });
 
-            let html = '<div class="stats-grid">';
+            // Generate header
+            let setsText = '';
+            if (selectedSets.length === 1) {
+                const setNum = selectedSets[0];
+                setsText = `Set ${setNum}${setNum === gameState.currentSet ? ' (In Progress)' : ''}`;
+            } else {
+                setsText = `Sets: ${selectedSets.sort((a, b) => a - b).join(', ')}`;
+            }
+
+            let html = `<h3 style="text-align: center; color: #667eea; margin-bottom: 20px;">${setsText}</h3>`;
+            html += '<div class="stats-grid">';
 
             gameState.players.forEach(player => {
-                const stats = gameState.stats[player.id];
-                const score = calculatePlayerScore(player.id);
+                const stats = combinedStats[player.id];
+                
+                // Calculate performance score
+                let score = 0;
+                if (stats.ralliesParticipated > 0) {
+                    score = ((stats.totalScore / stats.ralliesParticipated) * 20) + 50;
+                    score = Math.max(0, Math.min(100, Math.round(score)));
+                }
+                
                 const rating = getPerformanceRating(score);
                 const ratingClass = rating.toLowerCase();
 
@@ -1784,7 +2000,6 @@
 
             html += '</div>';
             content.innerHTML = html;
-            modal.classList.add('active');
         }
 
         function generateInsights(stats) {
